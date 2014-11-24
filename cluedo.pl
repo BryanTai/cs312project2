@@ -84,15 +84,40 @@ write_ln('One last thing, please enter the cards you have.'),
 write_ln('Okay, we\'re ready to go'),
 .
 
-% List of functions player can use
-makeAGuess:-
-manuallyAdd:-
-all the print info
+% List of functions player can use when program is "sleeping"
+% TODO
+ourTurn:-
+FIRST check if we can make an accusation, canMakeAccusation
+Ask user for guess info. Room, Weapon, Suspect.
+Ask user if someone gave info. Ask to write player name or just Nothing. (Check input against valid players)
+    If name, Ask user for what card they gave. Assert playerHas(name, card) 
+    Else Nothing, should be able to make accusation IF user does not have cards in guess.
+
+theirTurn:-
+
+
+manuallyAdd:- low priority...
+
+% all the print info, both valid and possible
+printAll:- 
+printWeapons:-
+printRooms:-
+printSuspects:-
+printPlayers:-
+
+% Helper functions
+canMakeAccusation:-  if true, write accusation.
+
+
 
 
 */
 
+/*  CODE STARTS HERE  */
+
 :- dynamic validWeapon/1.
+:- dynamic notPossibleWeapon/1.
+:- dynamic playerHas/2.
 
 hello :-
 write('What is your name ?'),
@@ -117,16 +142,21 @@ write_ln('All weapons added!').
 
 /*
 setSuspects :-
-
 setRooms :-
+
+
 setPlayers :-
 */
 
-isValidWeapon(X) :- validWeapon(X).
+possibleWeapon(W) :- not( playerHas(_,W)).
 
-printValidWeapons :-
+printWeapons :-
 write_ln('Valid weapons are : '),
-findall(X,validWeapon(X),L),
-write_ln(L).
+findall(X,validWeapon(X),L1),
+write_ln(L1),
+write_ln('Possible weapons are : '),
+findall(Y,possibleWeapon(Y),L2),
+write_ln(l2).
+
 
 
