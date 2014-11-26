@@ -49,6 +49,15 @@ validWeapon("KNIFE").
 possibleweapon("KNIFE").
 
 
+CAN USE AGGREGATE/3 TO COUNT NUMBER OF POSSIBILITIES
+aggregate(count, X^permutation([1,2,3,4], X), N).
+N = 24.
+X^ means "there exists X", so the whole formula means something like "count the number of ways that permutation([1,2,3,4],X) succeeds for some X and call that number N."
+OR FINDALL, GET LENGTH OF L
+ex
+countnumbers(X) :-
+    findall(N, number(N), Ns),
+    length(Ns, X).
 
 
 
@@ -60,10 +69,15 @@ Ask user for guess info. Room, Weapon, Suspect.
 Ask user if someone gave info. Ask to write player name or just Nothing. (Check input against valid players)
     If name, Ask user for what card they gave. Assert playerHas(name, card) 
     Else Nothing, should be able to make accusation IF user does not have cards in guess.
+Give a suggestion for our next guess, based on what we know.
 
 theirTurn:-
 First ask whos turn it is, (Prolog will know what they have, playerHas)
-Ask user for guess info. Room, Weapon, Suspect.
+Ask user for that players guess info. Room, Weapon, Suspect.
+Ask user if someone gave info. Ask to write player name or just Nothing.
+Compare the players guess info with what they have and what everyone else has.
+
+Give a suggestion for our next guess, based on what we know.
 
 manuallyAdd:- low priority...
 
@@ -91,7 +105,10 @@ write('Hello'), tab(1), write(X).
 :- dynamic validRoom/1.
 :- dynamic validPlayer/1.
 :- dynamic validUser/1.
+:- dynamic playerGoesBefore/2.
 :- dynamic playerHas/2.
+:- dynamic playerCannotHas/2.
+
 
 
 /* SETUP FUNCTIONS */
@@ -105,14 +122,15 @@ write_ln('setSuspects,'),
 write_ln('setRooms,'),
 write_ln('setPlayers,'),
 write_ln('setUserHand,'),
-write_ln('startGame.'),
+write_ln('beginGame.'),
 write_ln('Call each command to manually set up. Or just call start again.'),
 setWeapons,
 setSuspects,
 setRooms,
 setPlayers,
 setUserHand,
-startGame.
+printAll,
+beginGame.
 
 
 reminder :- write_ln('Enter each name one at a time surrounded by APOSTROPHES \' and ending with a PERIOD.').
@@ -172,17 +190,20 @@ reminder,
 write_ln('EXAMPLE: ?- Enter next Player : \'KURT EISELT\'. '),nl,
 write_ln('First, enter YOUR NAME: '), read(User), assert(validUser(User)),
 write_ln('Now, enter the PLAYER TO YOUR LEFT: '), read(Name), 
-setPlayerHelper(Name).
+setPlayerHelper(User, Name).
 
-/* setPlayerHelper/1 
+/* setPlayerHelper/2 
 Continues to prompt addition of Players until User writes their own name again
+Also sets first name to go before second name.
 */
-setPlayerHelper(Name) :- not(validUser(Name)), 
+setPlayerHelper(PastName, Name) :- not(validUser(Name)), 
 assert(validPlayer(Name)),
+assert(playerGoesBefore(PastName,Name)),
 write_ln('Enter next Player: '), read(NextName), 
-setPlayerHelper(NextName).
+setPlayerHelper(Name,NextName).
 
-setPlayerHelper(User) :- validUser(User),
+setPlayerHelper(PastName,User) :- validUser(User),
+assert(playerGoesBefore(PastName,User)),
 write_ln('All Players added!'),
 breakline.
 
@@ -209,8 +230,9 @@ write_ln('All cards added!'),
 breakline.
 
 
-startGame :-
-write_ln('Alright, now we\'re ready to start!'),
+beginGame :-
+write_ln('Alright, now we\'re ready to begin!'),nl,
+commands,
 breakline.
 
 
@@ -224,20 +246,89 @@ write_ln('theirTurn:'),
 write_ln('Type this when it\'s another player\'s turn and they\'re making a guess.'),nl,
 write_ln('printAll:'),
 write_ln('Print out all information that we know as of now.'),nl,
-write_ln
 breakline.
 
 /* INFORMATION FUNCTIONS */
+
+/*
+theirTurn:-
+write_ln('Who\s turn is it? Type the Player\'s name.'),
+write_ln('Enter Player Name : '),read(PlayerTurn),nl,
+write_ln('Which WEAPONS did they guess?'),
+write_ln('Enter Weapon guess : '),read(W),nl,
+write_ln('Which SUSPECT did they guess?'),
+write_ln('Enter Suspect guess : '),read(S),nl,
+write_ln('Which ROOM did they guess?'),
+write_ln('Enter Room guess : '),read(R),nl,
+write_ln('Did anyone give them information? If so, enter that Player\'s name. If not, enter \'NONE\'.'),
+write_ln('Enter Player name : '),read(PlayerInfo),nl,
+theirTurnHandler(PlayerTurn,W,S,R,PlayerInfo),
+breakline.
+
+% If somebody gave info...
+% And they are right next to the player...
+% Check if 2 out of 3 cards are known. 
+% The last card is what PInfo playerHas
+theirTurnHandler(PTurn,W,S,R,PInfo) :-
+validPlayer(PInfo),
+
+check2OutOf3(W,S,R),
+
+.
+
+% If somebody gave info...
+% But they go a few turns after the player...
+% The players that passed cannot have those cards.
+theirTurnHandler(PTurn,W,S,R,PInfo) :-
+
+% If nobody gave info...
+% They might have just won.
+% Need to compare their guess to what playerCannotHas.
+theirTurnHandler(PTurn,W,S,R,None) :- 
+not(validPlayer(None)),
+write_ln('Hmm..this is interesting...')
+.
+
+First ask whos turn it is, (Prolog will know what they have, playerHas)
+Ask user for that players guess info. Room, Weapon, Suspect.
+Ask user if someone gave info. Ask to write player name or just Nothing.
+Compare the players guess info with what they have and what everyone else has.
+
+Give a suggestion for our next guess, based on what we know.
+*/
 
 validCard(Card) :- validWeapon(Card).
 validCard(Card) :- validSuspect(Card).
 validCard(Card) :- validRoom(Card).
 
-possibleWeapon(W) :- validWeapon(W), not( playerHas(_,W)).
-possibleSuspect(S):- validSuspect(S), not( playerHas(_,S)).
-possibleRoom(R)   :- validRoom(R), not( playerHas(_,R)).
+% User is also a validPlayer...
+validPlayer(User) :- validUser(User).
 
-userHas(Card):- validUser(User), playerHas(User,Card).
+possibleCard(C) :- possibleWeapon(C).
+possibleCard(C) :- possibleSuspect(C).
+possibleCard(C) :- possibleRoom(C).
+
+possibleWeapon(W) :- validWeapon(W),  not( playerHas(_,W)).
+possibleSuspect(S):- validSuspect(S), not( playerHas(_,S)).
+possibleRoom(R)   :- validRoom(R),    not( playerHas(_,R)).
+
+someoneHas(Card) :- validCard(Card), playerHas(_,Card).
+
+check2OutOf3
+
+userHas(Card):- validCard(Card), validUser(User), playerHas(User,Card).
+
+/* playerCannotHas/2
+Player cannot possibly be holding Card (made guess, did not supply info)
+*/
+
+/* playerGoesBefore/2
+first player turn goes before the second player.
+
+*/
+
+
+% If number of playerCannotHas for certain card is one less than number of players, then the last player must have that card playerHas(Last, Card)
 
 /* PRINT FUNCTIONS */
 
@@ -275,6 +366,39 @@ write_ln(L2).
 
 printPlayers :-
 write('Your name is '), validUser(U), write(U),nl,
-write_ln('The other Players are : '),
+write_ln('The order of players is : '),
 findall(X,validPlayer(X),L),
 write_ln(L).
+
+
+% Quickly sets up game with shortened default Clue names. Just add Players.
+quickStart :-
+assert(validWeapon('Knife')),
+assert(validWeapon('Candle')),
+assert(validWeapon('Wrench')),
+assert(validWeapon('Gun')),
+assert(validWeapon('Rope')),
+assert(validWeapon('Pipe')),
+
+assert(validSuspect('Scarlet')),
+assert(validSuspect('Mustard')),
+assert(validSuspect('Green')),
+assert(validSuspect('Peacock')),
+assert(validSuspect('Plum')),
+assert(validSuspect('White')),
+
+assert(validRoom('Hall')),
+assert(validRoom('Kitchen')),
+assert(validRoom('Dining')),
+assert(validRoom('Library')),
+assert(validRoom('Billiard')),
+assert(validRoom('Ballroom')),
+assert(validRoom('Conservatory')),
+assert(validRoom('Study')),
+assert(validRoom('Lounge')),
+
+setPlayers,
+setUserHand,
+printAll,
+beginGame.
+
