@@ -96,6 +96,9 @@ write('What is your name ?'),
 read(X),
 write('Hello'), tab(1), write(X).
 
+
+all3AreSingle
+
 */
 
 /* ========  CODE STARTS HERE =========  */
@@ -105,7 +108,7 @@ write('Hello'), tab(1), write(X).
 :- dynamic validRoom/1.
 :- dynamic validPlayer/1.
 :- dynamic validUser/1.
-:- dynamic playerGoesBefore/2.
+:- dynamic playerOrderIs/2.
 :- dynamic playerHas/2.
 :- dynamic playerCannotHas/2.
 
@@ -198,12 +201,12 @@ Also sets first name to go before second name.
 */
 setPlayerHelper(PastName, Name) :- not(validUser(Name)), 
 assert(validPlayer(Name)),
-assert(playerGoesBefore(PastName,Name)),
+assert(playerOrderIs(PastName,Name)),
 write_ln('Enter next Player: '), read(NextName), 
 setPlayerHelper(Name,NextName).
 
 setPlayerHelper(PastName,User) :- validUser(User),
-assert(playerGoesBefore(PastName,User)),
+assert(playerOrderIs(PastName,User)),
 write_ln('All Players added!'),
 breakline.
 
@@ -270,7 +273,8 @@ breakline.
 % Check if 2 out of 3 cards are known. 
 % The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
-validPlayer(PInfo),
+validPlayer(PInfo+),
+playerOrderIs(PTurn,PInfo),
 handle2OutOf3(W,S,R,PInfo),
 
 .
@@ -281,9 +285,11 @@ handle2OutOf3(W,S,R,PInfo),
 % Check if 2 out of 3 cards are known. 
 % The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
+validPlayer(PInfo),
+not(playerOrderIs(PTurn,PInfo)),
 
 
-% If nobody gave info...
+% Else If nobody gave info...
 % They might have just won.
 % Need to compare their guess to what playerCannotHas.
 theirTurnHandler(PTurn,W,S,R,None) :- 
@@ -357,8 +363,9 @@ userHas(Card):- validCard(Card), validUser(User), playerHas(User,Card).
 Player cannot possibly be holding Card (made guess, did not supply info)
 */
 
-/* playerGoesBefore/2
-first player turn goes before the second player.
+/* playerOrderIs/2
+playerOrderIs(FirstP,SecondP)
+first player goes before the second player.
 
 */
 
