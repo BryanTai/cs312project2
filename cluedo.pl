@@ -72,11 +72,6 @@ write_ln('Did anyone give you information for your guess?'),read(Name),
 write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)),
 canMakeAccusation.
 
-
-
-read(W),assert(possibleweapon(_,W))
-assert(playerHas(Player,Card)),
-
 FIRST check if we can make an accusation, canMakeAccusation
 Ask user for guess info. Room, Weapon, Suspect.
 Ask user if someone gave info. Ask to write player name or just Nothing. (Check input against valid players)
@@ -286,6 +281,42 @@ breakline.
 
 /* INFORMATION FUNCTIONS */
 
+ourTurn:-
+canMakeAccusation,
+write_ln('Please write weapon:'),read(W),
+write_ln('Please write room:'),read(R),
+write_ln('Please write suspect:'),read(S),
+write_ln('Did anyone give you information for your guess?'),read(Name),
+ourTurnHandler(W,R,S,Name,Card),
+canMakeAccusation.
+
+% If somebody gave name that is valid
+ourTurnHandler(W,R,S,Name,Card) :-
+validName(Name),
+write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)).
+
+
+% If somebody gave name that does not exists
+ourTurnHandler(W,R,S,Name,Card) :-
+not(validName(Name)).
+write_ln('Nobody told you anything').
+
+canMakeAccusation :-
+findall(X,possibleRoom(X),LR),
+findall(X,possibleSuspect(X),LS),
+findall(X,possibleWeapon(X),LW),
+all3Single(LR,LS,LW),
+write_ln('Time to start accusing!'),
+write_ln('Weapon'),write_ln(LW),write_ln('Suspect'),write_ln(LS),write_ln('Room'),write_ln(LR).
+
+canMakeAccusation :-
+findall(X,possibleRoom(X),LR),
+findall(X,possibleSuspect(X),LS),
+findall(X,possibleWeapon(X),LW),
+(not(all3Single(LR,LS,LW))).
+
+all3Single(L1,L2,L3) :- length(L1,1),length(L2,1),length(L3,1).
+
 /*
 theirTurn:-
 write_ln('Who\s turn is it? Type the Player\'s name.'),
@@ -306,7 +337,7 @@ breakline.
 % Check if 2 out of 3 cards are known. 
 % The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
-validPlayer(PInfo+),
+validPlayer(PInfo),
 playerOrderIs(PTurn,PInfo),
 handle2OutOf3(W,S,R,PInfo),
 
@@ -327,8 +358,7 @@ not(playerOrderIs(PTurn,PInfo)),
 % Need to compare their guess to what playerCannotHas.
 theirTurnHandler(PTurn,W,S,R,None) :- 
 not(validPlayer(None)),
-write_ln('Uhoh...They might have just won.')
-.
+write_ln('Uhoh...They might have just won.').
 
 
 First ask whos turn it is, (Prolog will know what they have, playerHas)
