@@ -64,12 +64,27 @@ countnumbers(X) :-
 % List of functions player can use when program is "sleeping"
 % TODO
 ourTurn:-
+canMakeAccusation,
+write_ln('Please write weapon:'),read(W),
+write_ln('Please write room:'),read(R),
+write_ln('Please write suspect:'),read(S),
+write_ln('Did anyone give you information for your guess?'),read(Name),
+write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)),
+canMakeAccusation.
+
+
+
+read(W),assert(possibleweapon(_,W))
+assert(playerHas(Player,Card)),
+
 FIRST check if we can make an accusation, canMakeAccusation
 Ask user for guess info. Room, Weapon, Suspect.
 Ask user if someone gave info. Ask to write player name or just Nothing. (Check input against valid players)
     If name, Ask user for what card they gave. Assert playerHas(name, card) 
     Else Nothing, should be able to make accusation IF user does not have cards in guess.
 Give a suggestion for our next guess, based on what we know.
+
+
 
 theirTurn:-
 First ask whos turn it is, (Prolog will know what they have, playerHas)
@@ -89,7 +104,25 @@ printSuspects:-
 printPlayers:-
 
 % Helper functions
-canMakeAccusation:-  if true, write accusation.
+canMakeAccusation :-
+findall(X,possibleRoom(X),LR),
+findall(X,possibleSuspect(X),LS),
+findall(X,possibleWeapon(X),LW),
+all3Single(LR,LS,LW),
+write_ln('Time to start accusing!'),
+write_ln('Weapon'),write_ln(LW),write_ln('Suspect'),write_ln(LS),write_ln('Room'),write_ln(LR).
+
+
+canMakeAccusation :-
+findall(X,possibleRoom(X),LR),
+findall(X,possibleSuspect(X),LS),
+findall(X,possibleWeapon(X),LW),
+(not(all3Single(LR,LS,LW))).
+
+
+if true, write accusation.
+
+all3Single(L1,L2,L3) :- length(L1,1),length(L2,1),length(L3,1).
 
 hello :-
 write('What is your name ?'),
