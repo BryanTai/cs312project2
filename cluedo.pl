@@ -294,7 +294,8 @@ write_ln('Please write room:'),read(R),
 write_ln('Please write suspect:'),read(S),
 write_ln('Did anyone give you information for your guess?'),read(Name),
 ourTurnHandler(W,R,S,Name,Card),
-canMakeAccusation.
+canMakeAccusation,
+makeASuggestion.
 
 % If somebody gave name that is valid
 ourTurnHandler(W,R,S,Name,Card) :-
@@ -328,9 +329,7 @@ makeASuggestion :-
 write_ln('You should try this:'),
 findall(X,possibleRoom(X),[R|LR]), write_ln(R),
 findall(X,possibleSuspect(X),[S|LS]),write_ln(S),
-findall(X,possibleWeapon(X),[W|LW],write_ln(W).
-
-
+findall(X,possibleWeapon(X),[W|LW]),write_ln(W).
 
 theirTurn:-
 write_ln('Who\'s turn is it? Type the Player\'s name.'),
