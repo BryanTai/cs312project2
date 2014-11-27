@@ -11,7 +11,7 @@ REMEMBER TO MAKE PREDICATES DYNAMIC
 
 /*
 Initially,
-Get user to Enter all VALID info in game. Assert into database. 
+Get user to Enter all VALID info in game. AssertThis into database. 
 
 Ask for:
 - 6 weapons
@@ -26,7 +26,7 @@ Each group has POSSIBLE predicates.
 Starts as all 21 possible cards. Gets retracted on each player guess.
 Once one of each possible card remains, ACCUSATION
 
-Whenever we learn information, Assert that info
+Whenever we learn information, AssertThis that info
 *ex the cards in our hand, Retract from POSSIBLE
 Each players guess narrows down the possible cards.
 
@@ -69,13 +69,13 @@ write_ln('Please write weapon:'),read(W),
 write_ln('Please write room:'),read(R),
 write_ln('Please write suspect:'),read(S),
 write_ln('Did anyone give you information for your guess?'),read(Name),
-write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)),
+write_ln('Oh good. What did they show you?'),read(Card),assertThis(playerHas(Name,Card)),
 canMakeAccusation.
 
 FIRST check if we can make an accusation, canMakeAccusation
 Ask user for guess info. Room, Weapon, Suspect.
 Ask user if someone gave info. Ask to write player name or just Nothing. (Check input against valid players)
-    If name, Ask user for what card they gave. Assert playerHas(name, card) 
+    If name, Ask user for what card they gave. AssertThis playerHas(name, card) 
     Else Nothing, should be able to make accusation IF user does not have cards in guess.
 Give a suggestion for our next guess, based on what we know.
 
@@ -115,8 +115,6 @@ findall(X,possibleWeapon(X),LW),
 (not(all3Single(LR,LS,LW))).
 
 
-if true, write accusation.
-
 all3Single(L1,L2,L3) :- length(L1,1),length(L2,1),length(L3,1).
 
 hello :-
@@ -139,6 +137,14 @@ all3AreSingle
 :- dynamic playerOrderIs/2.
 :- dynamic playerHas/2.
 :- dynamic playerCannotHas/2.
+
+% borrowed from stackOverflow
+% Only asserts things once.
+assertThis(Fact):-
+\+( Fact ),!,         % \+ is a NOT operator.
+assert(Fact).
+assertThis(_).
+
 
 
 
@@ -251,7 +257,7 @@ Continues to prompt addition of cards in Users hand until they type an invalid c
 */
 setUserHandHelper(Card):- validCard(Card),
 validUser(User),
-assert(playerHas(User,Card)),
+assertThis(playerHas(User,Card)),
 write_ln('Enter Card Name : '),
 read(Card2),
 setUserHandHelper(Card2).
@@ -292,13 +298,14 @@ canMakeAccusation.
 
 % If somebody gave name that is valid
 ourTurnHandler(W,R,S,Name,Card) :-
-validName(Name),
-write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)).
+validPlayer(Name),
+write_ln('Oh good. What did they show you?'),read(Card),
+assertThis(playerHas(Name,Card)).
 
 
 % If somebody gave name that does not exists
 ourTurnHandler(W,R,S,Name,Card) :-
-not(validName(Name)).
+not(validPlayer(Name)),
 write_ln('Nobody told you anything').
 
 canMakeAccusation :-
@@ -317,9 +324,9 @@ findall(X,possibleWeapon(X),LW),
 
 all3Single(L1,L2,L3) :- length(L1,1),length(L2,1),length(L3,1).
 
-/*
+
 theirTurn:-
-write_ln('Who\s turn is it? Type the Player\'s name.'),
+write_ln('Who\'s turn is it? Type the Player\'s name.'),
 write_ln('Enter Player Name : '),read(PlayerTurn),nl,
 write_ln('Which WEAPONS did they guess?'),
 write_ln('Enter Weapon guess : '),read(W),nl,
@@ -338,11 +345,9 @@ breakline.
 % The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
 validPlayer(PInfo),
-playerOrderIs(PTurn,PInfo),
-handle2OutOf3(W,S,R,PInfo),
-
-.
-
+% playerOrderIs(PTurn,PInfo),
+handle2OutOf3(W,S,R,PInfo).
+/*
 % If somebody gave info...
 % But they go a few turns after the player...
 % The players that passed cannot have those cards.
@@ -351,7 +356,7 @@ handle2OutOf3(W,S,R,PInfo),
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
 validPlayer(PInfo),
 not(playerOrderIs(PTurn,PInfo)),
-
+*/
 
 % Else If nobody gave info...
 % They might have just won.
@@ -360,7 +365,7 @@ theirTurnHandler(PTurn,W,S,R,None) :-
 not(validPlayer(None)),
 write_ln('Uhoh...They might have just won.').
 
-
+/*
 First ask whos turn it is, (Prolog will know what they have, playerHas)
 Ask user for that players guess info. Room, Weapon, Suspect.
 Ask user if someone gave info. Ask to write player name or just Nothing.
@@ -375,7 +380,7 @@ Give a suggestion for our next guess, based on what we know.
 % If less than 2 of those 3 cards are known,
 % Or we already know who has all 3 cards,
 % Or the person who gave info was User,
-% we cannot assert anything new.
+% we cannot assertThis anything new.
 
 handle2OutOf3(W,S,R,PInfo) :-
 not(validUser(PInfo)),
@@ -392,7 +397,7 @@ write_ln('Darn. I can\'t get anything new from that.').
 
 handleNoOneHas(L,PInfo) :- length(L,1), 
 L = [Card],
-assert(playerHas(PInfo,Card)),
+assertThis(playerHas(PInfo,Card)),
 write('Hmm, I already know who holds two out of those three cards. Therefore the third card '), write(Card), write(' must be held by '), write(PInfo),nl.
 
 
@@ -431,7 +436,6 @@ playerOrderIs(FirstP,SecondP)
 first player goes before the second player.
 
 */
-
 
 % If number of playerCannotHas for certain card is one less than number of players, then the last player must have that card playerHas(Last, Card)
 
