@@ -268,26 +268,29 @@ breakline.
 % If somebody gave info...
 % And they are right next to the player...
 % Check if 2 out of 3 cards are known. 
-% The last card is what PInfo playerHas
+% The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
 validPlayer(PInfo),
-
-check2OutOf3(W,S,R),
+handle2OutOf3(W,S,R,PInfo),
 
 .
 
 % If somebody gave info...
 % But they go a few turns after the player...
 % The players that passed cannot have those cards.
+% Check if 2 out of 3 cards are known. 
+% The last card is what PInfo playerHas.
 theirTurnHandler(PTurn,W,S,R,PInfo) :-
+
 
 % If nobody gave info...
 % They might have just won.
 % Need to compare their guess to what playerCannotHas.
 theirTurnHandler(PTurn,W,S,R,None) :- 
 not(validPlayer(None)),
-write_ln('Hmm..this is interesting...')
+write_ln('Uhoh...They might have just won.')
 .
+
 
 First ask whos turn it is, (Prolog will know what they have, playerHas)
 Ask user for that players guess info. Room, Weapon, Suspect.
@@ -297,6 +300,34 @@ Compare the players guess info with what they have and what everyone else has.
 Give a suggestion for our next guess, based on what we know.
 */
 
+% 3 cards are guessed and Player PInfo answered.
+% if exactly 2 are known to be held by players,
+% then the third card must be held by PInfo.
+% If less than 2 of those 3 cards are known,
+% Or we already know who has all 3 cards,
+% Or the person who gave info was User,
+% we cannot assert anything new.
+
+handle2OutOf3(W,S,R,PInfo) :-
+not(validUser(PInfo)),
+[W,S,R] = X,
+findall(C,selectNoOneHas(X,C),L),
+handleNoOneHas(L,PInfo).
+
+handle2OutOf3(_,_,_,User) :-
+validUser(User),
+write_ln('Shoot. I can\'t get anything new from that.').
+
+handleNoOneHas(L,_) :- not(length(L,1)), 
+write_ln('Darn. I can\'t get anything new from that.').
+
+handleNoOneHas(L,PInfo) :- length(L,1), 
+L = [Card],
+assert(playerHas(PInfo,Card)),
+write('Hmm, I already know who holds two out of those three cards. Therefore the third card '), write(Card), write(' must be held by '), write(PInfo),nl.
+
+
+/* INFO HELPERS */
 validCard(Card) :- validWeapon(Card).
 validCard(Card) :- validSuspect(Card).
 validCard(Card) :- validRoom(Card).
@@ -314,7 +345,11 @@ possibleRoom(R)   :- validRoom(R),    not( playerHas(_,R)).
 
 someoneHas(Card) :- validCard(Card), playerHas(_,Card).
 
-check2OutOf3
+/* selectNoOneHas/2
+Card is a validCard from list of SomeCards that nobody has yet.
+*/
+selectNoOneHas([Card|T],Card):- validCard(Card),not(someoneHas(Card)).
+selectNoOneHas([H|T], Card) :- selectNoOneHas(T,Card).
 
 userHas(Card):- validCard(Card), validUser(User), playerHas(User,Card).
 
