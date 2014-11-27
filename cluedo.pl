@@ -292,13 +292,14 @@ canMakeAccusation.
 
 % If somebody gave name that is valid
 ourTurnHandler(W,R,S,Name,Card) :-
-validName(Name),
-write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)).
+validPlayer(Name),
+write_ln('Oh good. What did they show you?'),read(Card),assert(playerHas(Name,Card)),
+write_ln('Ok, player'),write_ln(Name),write_ln('has shown '),write_ln(Card).
 
 
 % If somebody gave name that does not exists
 ourTurnHandler(W,R,S,Name,Card) :-
-not(validName(Name)).
+not(validPlayer(Name)),
 write_ln('Nobody told you anything').
 
 canMakeAccusation :-
@@ -316,6 +317,12 @@ findall(X,possibleWeapon(X),LW),
 (not(all3Single(LR,LS,LW))).
 
 all3Single(L1,L2,L3) :- length(L1,1),length(L2,1),length(L3,1).
+
+makeASuggestion :-
+write_ln('You should try this:'),
+findall(X,possibleRoom(X),[R|LR]), write_ln(R),
+findall(X,possibleSuspect(X),[S|LS]),write_ln(S),
+findall(X,possibleWeapon(X),[W|LW],write_ln(W).
 
 /*
 theirTurn:-
